@@ -65,8 +65,9 @@ public class ReservationsService {
     }
 
     public boolean reservationsEnabledForDocumentPositions() {
-        Entity documentPositionParameters = dataDefinitionService.get(MaterialFlowResourcesConstants.PLUGIN_IDENTIFIER,
-                MaterialFlowResourcesConstants.MODEL_DOCUMENT_POSITION_PARAMETERS).find().setMaxResults(1).uniqueResult();
+        Entity documentPositionParameters = dataDefinitionService
+                .get(MaterialFlowResourcesConstants.PLUGIN_IDENTIFIER,
+                        MaterialFlowResourcesConstants.MODEL_DOCUMENT_POSITION_PARAMETERS).find().setMaxResults(1).uniqueResult();
         if (documentPositionParameters != null) {
             return documentPositionParameters.getBooleanField(ParameterFieldsMFR.DRAFT_MAKES_RESERVATION);
         }
@@ -78,7 +79,8 @@ public class ReservationsService {
             return ReservationsService.this.reservationsEnabledForDocumentPositions();
         }
         String type = document.getStringField(DocumentFields.TYPE);
-        return ReservationsService.this.reservationsEnabledForDocumentPositions() && DocumentType.isOutbound(type) && !document.getBooleanField(DocumentFields.IN_BUFFER);
+        return ReservationsService.this.reservationsEnabledForDocumentPositions() && DocumentType.isOutbound(type)
+                && !document.getBooleanField(DocumentFields.IN_BUFFER);
     }
 
     /**
@@ -119,8 +121,8 @@ public class ReservationsService {
         if (DocumentState.of(document).equals(DocumentState.ACCEPTED)) {
             return;
         }
-        Entity reservation = dataDefinitionService
-                .get(MaterialFlowResourcesConstants.PLUGIN_IDENTIFIER, MaterialFlowResourcesConstants.MODEL_RESERVATION).create();
+        Entity reservation = dataDefinitionService.get(MaterialFlowResourcesConstants.PLUGIN_IDENTIFIER,
+                MaterialFlowResourcesConstants.MODEL_RESERVATION).create();
 
         reservation.setField(ReservationFields.LOCATION, document.getBelongsToField(DocumentFields.LOCATION_FROM));
         reservation.setField(ReservationFields.POSITION, position);
@@ -128,7 +130,7 @@ public class ReservationsService {
         reservation.setField(ReservationFields.QUANTITY, position.getDecimalField(PositionFields.QUANTITY));
         reservation.setField(ReservationFields.RESOURCE, position.getBelongsToField(PositionFields.RESOURCE));
         reservation = reservation.getDataDefinition().save(reservation);
-        
+
         position.setField(PositionFields.RESERVATIONS, Lists.newArrayList(reservation));
     }
 
@@ -214,7 +216,7 @@ public class ReservationsService {
      */
     public void updateReservationFromDocumentPosition(final Entity position) {
         Entity document = position.getBelongsToField(PositionFields.DOCUMENT);
-        if (!reservationsEnabledForDocumentPositions(document)){
+        if (!reservationsEnabledForDocumentPositions(document)) {
             return;
         }
         Entity product = position.getBelongsToField(PositionFields.PRODUCT);
@@ -249,8 +251,8 @@ public class ReservationsService {
         String query = "DELETE FROM materialflowresources_reservation WHERE position_id = :id";
         jdbcTemplate.update(query, params);
         resourceStockService.updateResourceStock(params, (BigDecimalUtils.convertNullToZero(params.get(L_QUANTITY))).negate());
-        resourceReservationsService.updateResourceQuantites(params,
-                BigDecimalUtils.convertNullToZero(params.get(L_QUANTITY)).negate());
+        resourceReservationsService.updateResourceQuantites(params, BigDecimalUtils.convertNullToZero(params.get(L_QUANTITY))
+                .negate());
     }
 
     /**
@@ -278,7 +280,9 @@ public class ReservationsService {
         }, Boolean.class);
         String queryForDocumentType = "SELECT type, inBuffer FROM materialflowresources_document WHERE id = :document_id";
         Map<String, Object> documentMap = jdbcTemplate.queryForMap(queryForDocumentType, params);
-        return enabled && DocumentType.isOutbound((String)documentMap.get("type")) && !(boolean)documentMap.get("inBuffer");
+        boolean shouldBeInBuffer = params.get("shouldBeInBuffer") == null || (boolean) params.get("shouldBeInBuffer");
+        return enabled && DocumentType.isOutbound((String) documentMap.get("type"))
+                && (!(boolean) documentMap.get("inBuffer") || !shouldBeInBuffer);
     }
 
     public Entity getReservationForPosition(final Entity position) {
