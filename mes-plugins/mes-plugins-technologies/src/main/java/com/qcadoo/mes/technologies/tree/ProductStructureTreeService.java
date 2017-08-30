@@ -127,12 +127,9 @@ public class ProductStructureTreeService {
                 TechnologiesConstants.MODEL_TECHNOLOGY);
         List<Entity> technologiesForProduct = technologyDD
                 .find()
-                .add(SearchRestrictions.isNull(TechnologyFields.TECHNOLOGY_TYPE))
-                .add(SearchRestrictions.isNull(TechnologyFields.TECHNOLOGY_GROUP))
-                .add(SearchRestrictions.and(
-                        SearchRestrictions.belongsTo(L_PRODUCT, product),
-                        SearchRestrictions.or(SearchRestrictions.eq("state", "02accepted"),
-                                SearchRestrictions.eq("state", "05checked")))).list().getEntities();
+                .add(SearchRestrictions.eq(TechnologyFields.MASTER, Boolean.TRUE))
+                .add(SearchRestrictions.belongsTo(L_PRODUCT, product))
+                .add(SearchRestrictions.in("state", "02accepted", "05checked")).list().getEntities();
         Entity result = null;
         for (Entity technology : technologiesForProduct) {
             boolean isMaster = technology.getBooleanField("master");
@@ -243,8 +240,6 @@ public class ProductStructureTreeService {
                 } else {
                     child.setField(L_OPERATION, operation);
                     child.setField(L_DIVISION, operation.getBelongsToField(TechnologyOperationComponentFields.DIVISION));
-                    child.setField(L_TECHNOLOGY_GROUP, technologyGroup);
-                    child.setField(L_STANDARD_PERFORMANCE_TECHNOLOGY, standardPerformanceTechnology);
 
                     addChild(tree, child, parent, L_MATERIAL);
                 }
