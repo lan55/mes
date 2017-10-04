@@ -1,4 +1,4 @@
-<a href="https://qcadoo.com"><img src="https://cloud.githubusercontent.com/assets/513146/25782749/bc50ca98-3350-11e7-8837-64fde0f16d48.png" alt="qcadoo MES" /></a>
+a<a href="https://qcadoo.com"><img src="https://cloud.githubusercontent.com/assets/513146/25782749/bc50ca98-3350-11e7-8837-64fde0f16d48.png" alt="qcadoo MES" /></a>
 ![beautiful screenshot](https://cloud.githubusercontent.com/assets/513146/25784436/63e0b7c0-336d-11e7-8124-75f860e6f1f0.png)
 # qcadoo MES
 
@@ -30,3 +30,4 @@ Commercial version provides i.e.
 ## Licensing
 
 The code is available under the [GNU AGPLv3](LICENSE.txt).
+a
