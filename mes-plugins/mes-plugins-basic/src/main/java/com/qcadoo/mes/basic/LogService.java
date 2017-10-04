@@ -78,6 +78,10 @@ public class LogService {
             return new Builder().withLogLevel(LogLevel.INFO).withType(type).withAction(action);
         }
 
+        public static Builder activity(String type, String action) {
+            return new Builder().withLogLevel(LogLevel.ACTIVITY).withType(type).withAction(action);
+        }
+
         public Builder withType(String type) {
             this.type = type;
             return this;

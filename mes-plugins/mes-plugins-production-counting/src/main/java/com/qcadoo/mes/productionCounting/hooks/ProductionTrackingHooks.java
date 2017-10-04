@@ -23,26 +23,16 @@
  */
 package com.qcadoo.mes.productionCounting.hooks;
 
-import com.google.common.collect.Maps;
-import com.qcadoo.localization.api.TranslationService;
-import com.qcadoo.mes.basic.LogService;
-import com.qcadoo.mes.basic.ParameterService;
-import com.qcadoo.mes.orders.constants.OrderFields;
-import com.qcadoo.mes.productionCounting.ProductionTrackingService;
-import com.qcadoo.mes.productionCounting.SetTechnologyInComponentsService;
-import com.qcadoo.mes.productionCounting.SetTrackingOperationProductsComponentsService;
-import com.qcadoo.mes.productionCounting.constants.*;
-import com.qcadoo.mes.productionCounting.hooks.helpers.OperationProductsExtractor;
-import com.qcadoo.mes.productionCounting.states.ProductionTrackingStatesHelper;
-import com.qcadoo.mes.productionCounting.states.constants.ProductionTrackingStateStringValues;
-import com.qcadoo.model.api.DataDefinition;
-import com.qcadoo.model.api.Entity;
-import com.qcadoo.model.api.EntityList;
-import com.qcadoo.model.api.search.SearchRestrictions;
-import com.qcadoo.security.api.SecurityService;
-import com.qcadoo.view.api.utils.NumberGeneratorService;
+import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,12 +41,29 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import com.google.common.collect.Maps;
+import com.qcadoo.localization.api.TranslationService;
+import com.qcadoo.mes.basic.LogService;
+import com.qcadoo.mes.basic.ParameterService;
+import com.qcadoo.mes.orders.constants.OrderFields;
+import com.qcadoo.mes.productionCounting.ProductionTrackingService;
+import com.qcadoo.mes.productionCounting.SetTechnologyInComponentsService;
+import com.qcadoo.mes.productionCounting.SetTrackingOperationProductsComponentsService;
+import com.qcadoo.mes.productionCounting.constants.OrderFieldsPC;
+import com.qcadoo.mes.productionCounting.constants.ProductionTrackingFields;
+import com.qcadoo.mes.productionCounting.constants.TrackingOperationProductInComponentFields;
+import com.qcadoo.mes.productionCounting.constants.TrackingOperationProductOutComponentFields;
+import com.qcadoo.mes.productionCounting.hooks.helpers.OperationProductsExtractor;
+import com.qcadoo.mes.productionCounting.states.ProductionTrackingStatesHelper;
+import com.qcadoo.mes.productionCounting.states.constants.ProductionTrackingStateStringValues;
+import com.qcadoo.model.api.DataDefinition;
+import com.qcadoo.model.api.Entity;
+import com.qcadoo.model.api.EntityList;
+import com.qcadoo.model.api.search.SearchRestrictions;
+import com.qcadoo.security.api.SecurityService;
+import com.qcadoo.security.api.UserService;
+import com.qcadoo.security.constants.UserFields;
+import com.qcadoo.view.api.utils.NumberGeneratorService;
 
 @Service
 public class ProductionTrackingHooks {
@@ -96,6 +103,9 @@ public class ProductionTrackingHooks {
     @Autowired
     private TranslationService translationService;
 
+    @Autowired
+    private UserService userService;
+
     public void onCreate(final DataDefinition productionTrackingDD, final Entity productionTracking) {
         setInitialState(productionTracking);
     }
@@ -113,6 +123,26 @@ public class ProductionTrackingHooks {
         copyProducts(productionTracking);
         generateSetTrackingOperationProductsComponents(productionTracking);
         generateSetTechnologyInComponents(productionTracking);
+
+        if (productionTracking.getId() == null) {
+
+            Entity user = userService.find(productionTracking.getStringField("createUser"));
+            String worker = StringUtils.EMPTY;
+            if (user != null) {
+                worker = user.getStringField(UserFields.FIRST_NAME) + " " + user.getStringField(UserFields.LAST_NAME);
+            }
+            String number = productionTracking.getStringField(ProductionTrackingFields.NUMBER);
+            String orderNumber = productionTracking.getBelongsToField(ProductionTrackingFields.ORDER).getStringField(
+                    OrderFields.NUMBER);
+            DateTime createDate = new DateTime(productionTracking.getDateField("createDate"));
+            logService.add(LogService.Builder.activity(
+                    "productionTracking",
+                    translationService.translate("productionCounting.productionTracking.activity.created.action",
+                            LocaleContextHolder.getLocale())).withMessage(
+                    translationService.translate("productionCounting.productionTracking.activity.created.message",
+                            LocaleContextHolder.getLocale(), worker, number, orderNumber,
+                            createDate.toString("HH:mm:ss dd/MM/yyyy"))));
+        }
     }
 
     public void onDelete(final DataDefinition productionTrackingDD, final Entity productionTracking) {
@@ -264,8 +294,7 @@ public class ProductionTrackingHooks {
     }
 
     private String setNumberFromSequence(final Entity productionTracking) {
-        return jdbcTemplate.queryForObject("select generate_productiontracking_number()", Maps.newHashMap(),
-                String.class);
+        return jdbcTemplate.queryForObject("select generate_productiontracking_number()", Maps.newHashMap(), String.class);
     }
 
     private void generateSetTrackingOperationProductsComponents(Entity productionTracking) {
