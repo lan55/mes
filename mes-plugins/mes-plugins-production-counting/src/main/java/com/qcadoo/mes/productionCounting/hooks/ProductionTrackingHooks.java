@@ -46,6 +46,7 @@ import com.qcadoo.localization.api.TranslationService;
 import com.qcadoo.mes.basic.LogService;
 import com.qcadoo.mes.basic.ParameterService;
 import com.qcadoo.mes.orders.constants.OrderFields;
+import com.qcadoo.mes.orders.constants.OrdersConstants;
 import com.qcadoo.mes.productionCounting.ProductionTrackingService;
 import com.qcadoo.mes.productionCounting.SetTechnologyInComponentsService;
 import com.qcadoo.mes.productionCounting.SetTrackingOperationProductsComponentsService;
@@ -140,9 +141,13 @@ public class ProductionTrackingHooks {
                     translationService.translate("productionCounting.productionTracking.activity.created.action",
                             LocaleContextHolder.getLocale())).withMessage(
                     translationService.translate("productionCounting.productionTracking.activity.created.message",
-                            LocaleContextHolder.getLocale(), worker, number, orderNumber,
-                            createDate.toString("HH:mm:ss dd/MM/yyyy"))));
+                            LocaleContextHolder.getLocale(), worker, number, generateOrderDetailsUrl(orderNumber, order.getId()),
+                            createDate.toString("HH:mm dd/MM/yyyy"))));
         }
+    }
+
+    private String generateOrderDetailsUrl(String number, Long id) {
+        return "<a href=\"" + OrdersConstants.orderDetailsUrl(id) + "\" target=\"_blank\">" + number + "</a>";
     }
 
     public void onDelete(final DataDefinition productionTrackingDD, final Entity productionTracking) {

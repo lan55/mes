@@ -11,6 +11,7 @@ import com.qcadoo.localization.api.TranslationService;
 import com.qcadoo.mes.basic.LogService;
 import com.qcadoo.mes.newstates.BasicStateService;
 import com.qcadoo.mes.orders.constants.OrderFields;
+import com.qcadoo.mes.orders.constants.OrdersConstants;
 import com.qcadoo.mes.productionCounting.ProductionTrackingService;
 import com.qcadoo.mes.productionCounting.constants.ProductionCountingConstants;
 import com.qcadoo.mes.productionCounting.constants.ProductionTrackingFields;
@@ -105,8 +106,8 @@ public class ProductionTrackingStateService extends BasicStateService implements
             worker = user.getStringField(UserFields.FIRST_NAME) + " " + user.getStringField(UserFields.LAST_NAME);
         }
         String number = productionTracking.getStringField(ProductionTrackingFields.NUMBER);
-        String orderNumber = productionTracking.getBelongsToField(ProductionTrackingFields.ORDER).getStringField(
-                OrderFields.NUMBER);
+        Entity order = productionTracking.getBelongsToField(ProductionTrackingFields.ORDER);
+        String orderNumber = order.getStringField(OrderFields.NUMBER);
         DateTime createDate = new DateTime(productionTracking.getDateField("createDate"));
         logService.add(LogService.Builder.activity(
                 "productionTracking",
@@ -114,12 +115,16 @@ public class ProductionTrackingStateService extends BasicStateService implements
                         LocaleContextHolder.getLocale())).withMessage(
                 translationService.translate("productionCounting.productionTracking.activity." + state + ".message",
                         LocaleContextHolder.getLocale(), worker, generateDetailsUrl(number, productionTracking.getId()),
-                        orderNumber, createDate.toString("HH:mm:ss dd/MM/yyyy"))));
+                        generateOrderDetailsUrl(orderNumber, order.getId()), createDate.toString("HH:mm dd/MM/yyyy"))));
     }
 
     private String generateDetailsUrl(String number, Long id) {
         return "<a href=\"" + ProductionCountingConstants.productionTrackingDetailsUrl(id) + "\" target=\"_blank\">" + number
                 + "</a>";
+    }
+
+    private String generateOrderDetailsUrl(String number, Long id) {
+        return "<a href=\"" + OrdersConstants.orderDetailsUrl(id) + "\" target=\"_blank\">" + number + "</a>";
     }
 
 }

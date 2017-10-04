@@ -34,6 +34,7 @@ public class ActivityStreamService {
         sql.append("LEFT JOIN viewed_activities va ON log.id = va.log_id ");
         sql.append("WHERE log.logLevel = '07activity' ");
         sql.append("ORDER BY createtime DESC ");
+        sql.append("LIMIT 20");
 
         Map<String, Object> params = Maps.newHashMap();
 
